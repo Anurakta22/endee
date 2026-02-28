@@ -1,0 +1,20 @@
+# Vector database SDK
+endee>=0.1.0
+
+# Embeddings
+sentence-transformers>=2.7.0
+
+# LLM providers
+openai>=1.30.0
+ollama>=0.2.0
+
+# Utilities
+python-dotenv>=1.0.0
+rich>=13.7.0          # pretty terminal output
+typer>=0.12.0         # CLI
+httpx>=0.27.0         # async HTTP
+
+# Testing
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+pytest-mock>=3.14.0
