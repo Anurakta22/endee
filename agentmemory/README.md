@@ -25,7 +25,9 @@ AI assistants are **stateless by default** — every conversation starts fresh. 
 
 ---
 
-## 🏗️ How It Works
+## 🏗️ System Design & Technical Approach
+
+AgentMemory is built as a **layered pipeline**: an embedding layer, a vector memory store (Endee), an LLM layer, and a FastAPI interface on top.
 
 ```
 User message
@@ -33,18 +35,29 @@ User message
     ▼
 Embedder (MiniLM-L6, 384-dim)
     │
-    ├──► Endee: query top-5 similar past memories
+    ├──► Endee: query top-5 similar past memories (cosine ANN search)
     │
     ▼
-LLM (Mistral) + memories as context → Answer
+LLM (Mistral) + memories injected as context → Grounded Answer
     │
     ▼
-Every N turns → LLM summarises → Endee: store new memory
+Every N turns → LLM summarises buffer → Endee: upsert new memory
 ```
 
-- **Recall**: User message is embedded → Endee returns semantically similar past memories
-- **Generate**: Memories are injected into the LLM prompt → personalised, grounded answer
-- **Store**: After every N turns, the conversation is summarised → saved back to Endee
+**Component responsibilities:**
+
+| Component | Role |
+|-----------|------|
+| `embedder.py` | Converts text to 384-dim vectors using `all-MiniLM-L6-v2` |
+| `memory_store.py` | Endee SDK wrapper — handles upsert, query, and metadata |
+| `summariser.py` | Uses Mistral to summarise conversations into compact memories |
+| `agent.py` | Orchestrates the recall → generate → store pipeline |
+| `api.py` | FastAPI REST interface with session management |
+
+**Why this approach:**
+- **Semantic recall** over keyword search — Endee finds memories *by meaning*, so "async database" recalls "FastAPI + PostgreSQL" even if the words don't match exactly
+- **Summarise before store** — the LLM compresses noisy conversation turns into dense, info-rich memories before embedding, reducing noise
+- **Session-based memory** — each user has a named session; all memories across past sessions are queryable
 
 ---
 
