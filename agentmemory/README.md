@@ -150,6 +150,8 @@ The project is deployed on Hugging Face Spaces (free tier), running **Endee + Fa
 
 Use the chat interface — or `/docs` for the raw API.
 
+> **⚠️ Free Tier Limitation:** Hugging Face Spaces (free) puts containers to sleep after inactivity and resets them on restart. Since Endee runs inside the container, its stored memories are wiped on each restart. This is a **hosting constraint, not a limitation of Endee** — on a real server with a persistent Docker volume (`-v endee-data:/data`), memories would survive indefinitely. Locally, data persists across restarts as long as your Docker volume exists.
+
 ---
 
 ## ⚙️ Key Configuration
