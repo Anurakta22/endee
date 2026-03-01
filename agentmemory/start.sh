@@ -1,27 +1,46 @@
 #!/bin/bash
 
-# Find the Endee binary dynamically since its path may vary
-echo "Looking for Endee binary..."
-ENDEE_BIN=$(find / -maxdepth 5 -type f -executable \( -name "endee*" -o -name "ndd*" \) 2>/dev/null | grep -v proc | head -1)
+echo "=== Starting AgentMemory ==="
+echo "=== Searching for Endee binary ==="
 
-if [ -z "$ENDEE_BIN" ]; then
-    echo "Endee binary not found by name. Checking entrypoints..."
-    # Fallback: look for any binary in /usr/local/bin or /usr/bin that's not a system tool
-    ENDEE_BIN=$(find /usr/local/bin /usr/bin -maxdepth 1 -type f -executable 2>/dev/null | grep -v -E "python|pip|curl|bash|sh|ls|cat|grep|find|awk|sed" | head -1)
+# Print all executables to debug (helps read the HF logs)
+echo "All executables found in /usr/local/bin:"
+ls -la /usr/local/bin/ 2>/dev/null || echo "(empty)"
+
+echo "All executables found in /usr/bin (non-standard):"
+ls /usr/bin/ 2>/dev/null | grep -vE "^(python|pip|curl|bash|sh|ls|cat|grep|find|awk|sed|apt|dpkg|tar|gzip|cp|mv|rm|ln|chmod|chown|mkdir|touch|echo|test|true|false|env|head|tail|sort|wc|cut|tr|diff|du|df|pwd|which|type|set|export|unset|read|printf|date|id|groups|whoami|hostname|uname|ps|pgrep|kill|sleep|wait|exit|nohup|timeout)$" 2>/dev/null
+
+echo "Files in root /:"
+ls / 2>/dev/null | head -20
+
+# Try starting Endee using common binary names
+STARTED=false
+
+for CMD in endee endee-server ndd ndd-server endeeio /endee /endee-server /ndd /usr/local/bin/endee-server; do
+    if command -v "$CMD" &>/dev/null || [ -f "$CMD" ]; then
+        echo "Found Endee at: $CMD — starting..."
+        $CMD &
+        STARTED=true
+        break
+    fi
+done
+
+if [ "$STARTED" = false ]; then
+    echo "WARNING: Could not find Endee binary via name. Trying entrypoint from PATH..."
+    # Last resort: find any unusual executable
+    ENDEE_BIN=$(find /usr/local/bin /usr/bin / -maxdepth 2 -type f -executable 2>/dev/null \
+        | grep -vE "(python|pip|curl|bash|sh|ls|cat|grep|find|awk|sed|apt|dpkg|tar|gzip|cp|mv|rm|ln|chmod|chown|mkdir|touch|echo|test|true|false|env|head|tail|sort|wc|cut|tr|diff|du|df|pwd|which|type|date|id|groups|whoami|hostname|uname|ps|pgrep|kill|sleep|nohup|timeout)" \
+        | head -1)
+    if [ -n "$ENDEE_BIN" ]; then
+        echo "Trying binary: $ENDEE_BIN"
+        $ENDEE_BIN &
+    else
+        echo "ERROR: No Endee binary found at all. API will start but Endee will be unavailable."
+    fi
 fi
 
-echo "Starting Endee Vector Database at: $ENDEE_BIN"
-if [ -n "$ENDEE_BIN" ]; then
-    $ENDEE_BIN &
-else
-    echo "WARNING: Could not find Endee binary. Attempting to run 'endee-server'..."
-    endee-server &
-fi
-
-# Give Endee a few seconds to fully initialize
-echo "Waiting for Endee to start..."
+echo "=== Waiting 5s for Endee to initialize ==="
 sleep 5
 
-# Start the FastAPI Web Server on Hugging Face's required port (7860)
-echo "Starting FastAPI server on port 7860..."
+echo "=== Starting FastAPI on port 7860 ==="
 python -m uvicorn src.api:app --host 0.0.0.0 --port 7860
