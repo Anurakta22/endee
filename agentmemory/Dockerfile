@@ -1,18 +1,20 @@
-FROM endeeio/endee-server:latest AS endee_base
+# Use the Endee server as the base image so we don't need to copy any binary
+FROM endeeio/endee-server:latest
 
-FROM python:3.10-slim
+# Install Python 3.10 and pip
+# The Endee image uses Debian, so we use apt-get
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the Endee binary from the official image
-COPY --from=endee_base /endee /usr/local/bin/endee
-
-# Ensure Endee binary is executable
-RUN chmod +x /usr/local/bin/endee
+# Make 'python' and 'pip' point to python3/pip3
+RUN ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip
 
 # Set working directory
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -21,12 +23,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Copy and setup the start script
-COPY start.sh .
+# Make start script executable
 RUN chmod +x start.sh
 
 # Hugging Face Spaces exposes port 7860
 EXPOSE 7860
 
-# Run the start script
-CMD ["./start.sh"]
+# Override the default Endee entrypoint and run our start script
+ENTRYPOINT []
+CMD ["/bin/bash", "start.sh"]
