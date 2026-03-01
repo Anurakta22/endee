@@ -379,6 +379,21 @@ All tests run offline (Endee and LLM calls are mocked).
 
 ---
 
+## ☁️ Free Deployment (Hugging Face Spaces)
+
+You can host AgentMemory 100% for free on **Hugging Face Spaces**, which automatically spins up both the Endee Vector Database and the FastAPI server within a single Docker container.
+
+1. Create a new [Hugging Face Space](https://huggingface.co/new-space).
+2. Choose **Docker** as the Space SDK and select the **Blank** template.
+3. Link your GitHub repository to your Hugging Face Space (or push the code manually).
+4. In your Hugging Face Space settings, add your `MISTRAL_API_KEY` under **Variables and secrets** (as a Secret).
+5. The included `Dockerfile` and `start.sh` script will automatically:
+   - Start the Endee Vector Database in the background (`localhost:8080`).
+   - Start the FastAPI web server on Hugging Face's required port (`7860`).
+6. Once the build finishes, your API will be live!
+
+---
+
 ## 🛠️ Production Notes
 
 - Set `NDD_AUTH_TOKEN` in both `docker-compose.yml` and `.env` for authenticated access
