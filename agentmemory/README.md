@@ -1,3 +1,12 @@
+---
+title: EndeeAgent Memory
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # 🧠 AgentMemory
 
 > Long-term episodic memory for AI agents, powered by [Endee](https://github.com/endee-io/endee) vector database.
