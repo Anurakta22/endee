@@ -1,6 +1,6 @@
 # 🧠 AgentMemory — AI Project Built on Endee
 
-> **📌 Internship Project Submission by Anurakta Dash**
+> **📌 Assignment Submission by Anurakta Dash**
 
 This repository is a fork of [endee-io/endee](https://github.com/endee-io/endee).
 My AI/ML project — **AgentMemory** — is built inside the [`agentmemory/`](./agentmemory) folder.
