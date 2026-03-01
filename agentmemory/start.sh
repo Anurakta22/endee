@@ -1,46 +1,31 @@
 #!/bin/bash
 
 echo "=== Starting AgentMemory ==="
-echo "=== Searching for Endee binary ==="
 
-# Print all executables to debug (helps read the HF logs)
-echo "All executables found in /usr/local/bin:"
-ls -la /usr/local/bin/ 2>/dev/null || echo "(empty)"
+# The Endee binaries are: ndd-avx2, ndd-avx512, ndd-neon, ndd-sve2
+# Hugging Face runs on x86_64 - use entrypoint.sh which auto-detects the right binary
+# If entrypoint.sh doesn't exist, fall back to ndd-avx2
 
-echo "All executables found in /usr/bin (non-standard):"
-ls /usr/bin/ 2>/dev/null | grep -vE "^(python|pip|curl|bash|sh|ls|cat|grep|find|awk|sed|apt|dpkg|tar|gzip|cp|mv|rm|ln|chmod|chown|mkdir|touch|echo|test|true|false|env|head|tail|sort|wc|cut|tr|diff|du|df|pwd|which|type|set|export|unset|read|printf|date|id|groups|whoami|hostname|uname|ps|pgrep|kill|sleep|wait|exit|nohup|timeout)$" 2>/dev/null
-
-echo "Files in root /:"
-ls / 2>/dev/null | head -20
-
-# Try starting Endee using common binary names
-STARTED=false
-
-for CMD in endee endee-server ndd ndd-server endeeio /endee /endee-server /ndd /usr/local/bin/endee-server; do
-    if command -v "$CMD" &>/dev/null || [ -f "$CMD" ]; then
-        echo "Found Endee at: $CMD — starting..."
-        $CMD &
-        STARTED=true
-        break
-    fi
-done
-
-if [ "$STARTED" = false ]; then
-    echo "WARNING: Could not find Endee binary via name. Trying entrypoint from PATH..."
-    # Last resort: find any unusual executable
-    ENDEE_BIN=$(find /usr/local/bin /usr/bin / -maxdepth 2 -type f -executable 2>/dev/null \
-        | grep -vE "(python|pip|curl|bash|sh|ls|cat|grep|find|awk|sed|apt|dpkg|tar|gzip|cp|mv|rm|ln|chmod|chown|mkdir|touch|echo|test|true|false|env|head|tail|sort|wc|cut|tr|diff|du|df|pwd|which|type|date|id|groups|whoami|hostname|uname|ps|pgrep|kill|sleep|nohup|timeout)" \
-        | head -1)
-    if [ -n "$ENDEE_BIN" ]; then
-        echo "Trying binary: $ENDEE_BIN"
-        $ENDEE_BIN &
-    else
-        echo "ERROR: No Endee binary found at all. API will start but Endee will be unavailable."
-    fi
+if [ -f "/usr/local/bin/entrypoint.sh" ]; then
+    echo "Using Endee entrypoint.sh to auto-detect the correct binary..."
+    # Run entrypoint.sh in background - it handles CPU detection automatically
+    /usr/local/bin/entrypoint.sh &
+else
+    echo "Falling back to ndd-avx2 for x86_64..."
+    /usr/local/bin/ndd-avx2 &
 fi
 
-echo "=== Waiting 5s for Endee to initialize ==="
+echo "=== Waiting 5s for Endee to initialize on port 8080 ==="
 sleep 5
+
+# Verify Endee started
+if curl -sf http://localhost:8080/api/v1/index/list > /dev/null 2>&1; then
+    echo "=== Endee is running! ==="
+else
+    echo "=== WARNING: Endee may not have started. Attempting ndd-avx2 directly... ==="
+    /usr/local/bin/ndd-avx2 &
+    sleep 3
+fi
 
 echo "=== Starting FastAPI on port 7860 ==="
 python -m uvicorn src.api:app --host 0.0.0.0 --port 7860
