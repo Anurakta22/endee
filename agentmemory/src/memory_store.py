@@ -90,16 +90,28 @@ class MemoryEntry:
     @classmethod
     def from_query_result(cls, result: Any) -> "MemoryEntry":
         """Reconstruct a MemoryEntry from an Endee query result object."""
-        meta = result.meta or {}
-        return cls(
-            memory_id=result.id,
-            summary=meta.get("summary", ""),
-            session_id=meta.get("session_id", ""),
-            role=meta.get("role", ""),
-            turn=meta.get("turn", 0),
-            tags=meta.get("tags", []),
-            timestamp=meta.get("timestamp", ""),
-        )
+        if isinstance(result, dict):
+            meta = result.get("meta", {})
+            return cls(
+                memory_id=result.get("id"),
+                summary=meta.get("summary", ""),
+                session_id=meta.get("session_id", ""),
+                role=meta.get("role", ""),
+                turn=meta.get("turn", 0),
+                tags=meta.get("tags", []),
+                timestamp=meta.get("timestamp", ""),
+            )
+        else:
+            meta = getattr(result, "meta", {}) or {}
+            return cls(
+                memory_id=getattr(result, "id", None),
+                summary=meta.get("summary", ""),
+                session_id=meta.get("session_id", ""),
+                role=meta.get("role", ""),
+                turn=meta.get("turn", 0),
+                tags=meta.get("tags", []),
+                timestamp=meta.get("timestamp", ""),
+            )
 
 
 # ── MemoryStore ───────────────────────────────────────────────────────────────
@@ -130,11 +142,12 @@ class MemoryStore:
             return self._client.get_index(self._index_name)
         except Exception:
             # Index does not exist yet → create it
+            # In endee v0.1.16 this takes dimension, space_type, and precision at minimum
             self._client.create_index(
                 name=self._index_name,
                 dimension=cfg.embed_dimension,      # 384
                 space_type="cosine",
-                precision=Precision.INT8,            # fast + memory-efficient
+                precision="float32",            # matches embedding raw output
             )
             return self._client.get_index(self._index_name)
 
@@ -185,7 +198,8 @@ class MemoryStore:
         memories: List[MemoryEntry] = []
         for r in results:
             # Apply optional similarity threshold
-            if hasattr(r, "similarity") and r.similarity < min_similarity:
+            sim = r.get("similarity") if isinstance(r, dict) else getattr(r, "similarity", None)
+            if sim is not None and sim < min_similarity:
                 continue
             entry = MemoryEntry.from_query_result(r)
             # Apply optional session filter (client-side since Endee OSS
@@ -208,11 +222,11 @@ class MemoryStore:
             vector=embed(f"session {session_id}"),
             top_k=top_k * 3,  # over-fetch then filter
         )
-        memories = [
-            MemoryEntry.from_query_result(r)
-            for r in results
-            if (r.meta or {}).get("session_id") == session_id
-        ]
+        memories = []
+        for r in results:
+            meta = r.get("meta", {}) if isinstance(r, dict) else (getattr(r, "meta", None) or {})
+            if meta.get("session_id") == session_id:
+                memories.append(MemoryEntry.from_query_result(r))
         memories.sort(key=lambda m: m.turn, reverse=True)
         return memories[:top_k]
 

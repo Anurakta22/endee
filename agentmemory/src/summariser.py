@@ -16,14 +16,12 @@ from typing import List, Tuple
 
 from .config import cfg
 
-# ── Provider abstraction ──────────────────────────────────────────────────────
+def _chat_mistral(system: str, user: str) -> str:
+    from mistralai import Mistral
 
-def _chat_openai(system: str, user: str) -> str:
-    from openai import OpenAI
-
-    client = OpenAI(api_key=cfg.openai_api_key)
-    response = client.chat.completions.create(
-        model=cfg.openai_model,
+    client = Mistral(api_key=cfg.mistral_api_key)
+    response = client.chat.complete(
+        model=cfg.mistral_model,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -31,26 +29,13 @@ def _chat_openai(system: str, user: str) -> str:
         max_tokens=cfg.summary_max_tokens,
         temperature=0.3,
     )
-    return response.choices[0].message.content.strip()
-
-
-def _chat_ollama(system: str, user: str) -> str:
-    import ollama
-
-    response = ollama.chat(
-        model=cfg.ollama_model,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-    )
-    return response["message"]["content"].strip()
+    if response and response.choices and len(response.choices) > 0:
+        return response.choices[0].message.content.strip()
+    return ""
 
 
 def _llm(system: str, user: str) -> str:
-    if cfg.llm_provider == "ollama":
-        return _chat_ollama(system, user)
-    return _chat_openai(system, user)
+    return _chat_mistral(system, user)
 
 
 # ── Public functions ──────────────────────────────────────────────────────────

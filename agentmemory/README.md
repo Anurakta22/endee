@@ -46,10 +46,9 @@ When you ask the agent "How do I set up async DB access?", it silently recalls f
 │  │  LLM Buffer │────────────▶│ MemoryStore  │           │            │
 │  │(session buf)│             │ (Endee wrap) │           ▼            │
 │  └─────────────┘             └──────────────┘  ┌─────────────────┐   │
-│         ▲                                       │  LLM (GPT-4o /  │   │
-│         │                                       │   Ollama)       │   │
-│         └───────────────────────────────────────│  + context      │   │
-│                                                 └────────┬────────┘   │
+│         ▲                                       │  LLM (Mistral)    │   │
+│         │                                       │  + context      │   │
+│         └───────────────────────────────────────└────────┬────────┘   │
 │                                                          │            │
 │                                                    ANSWER + SOURCES   │
 └────────────────────────────────────────────────────────────────────────┘
@@ -179,7 +178,7 @@ agentmemory/
 |------|---------|---------|
 | Docker + Docker Compose | v2+ | Run Endee vector DB |
 | Python | 3.10+ | Run AgentMemory |
-| OpenAI API key **or** Ollama | — | LLM for answers & summarisation |
+| Mistral API key | — | LLM for answers & summarisation |
 
 ---
 
@@ -219,13 +218,10 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-# Required for LLM (choose one)
-LLM_PROVIDER=openai
-OPENAI_API_KEY=sk-...           # your OpenAI key
-
-# OR use Ollama (free, local):
-# LLM_PROVIDER=ollama
-# OLLAMA_MODEL=llama3
+# Required for LLM
+LLM_PROVIDER=mistral
+MISTRAL_API_KEY=YOUR_MISTRAL_API_KEY
+MISTRAL_MODEL=mistral-large-latest
 ```
 
 Everything else works with defaults for local development.
@@ -360,9 +356,9 @@ All tests run offline (Endee and LLM calls are mocked).
 | `ENDEE_BASE_URL` | `http://localhost:8080` | Endee server address |
 | `ENDEE_AUTH_TOKEN` | *(empty)* | Auth token (optional for local dev) |
 | `ENDEE_INDEX_NAME` | `agent_memory` | Name of the Endee index |
-| `LLM_PROVIDER` | `openai` | `openai` or `ollama` |
-| `OPENAI_API_KEY` | — | Your OpenAI key |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name |
+| `LLM_PROVIDER` | `mistral` | `mistral` |
+| `MISTRAL_API_KEY` | — | Your Mistral key |
+| `MISTRAL_MODEL` | `mistral-large-latest` | Mistral model name |
 | `EMBED_MODEL` | `all-MiniLM-L6-v2` | Sentence-transformers model |
 | `MEMORY_TOP_K` | `5` | Memories retrieved per query |
 | `SUMMARY_MAX_TOKENS` | `150` | Max tokens per memory summary |

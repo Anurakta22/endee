@@ -20,21 +20,14 @@ class Config:
         default_factory=lambda: os.getenv("ENDEE_INDEX_NAME", "agent_memory")
     )
 
-    # ── LLM ────────────────────────────────────────────────────────
     llm_provider: str = field(
-        default_factory=lambda: os.getenv("LLM_PROVIDER", "openai")
+        default_factory=lambda: os.getenv("LLM_PROVIDER", "mistral")
     )
-    openai_api_key: str = field(
-        default_factory=lambda: os.getenv("OPENAI_API_KEY", "")
+    mistral_api_key: str = field(
+        default_factory=lambda: os.getenv("MISTRAL_API_KEY", "")
     )
-    openai_model: str = field(
-        default_factory=lambda: os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    )
-    ollama_base_url: str = field(
-        default_factory=lambda: os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    )
-    ollama_model: str = field(
-        default_factory=lambda: os.getenv("OLLAMA_MODEL", "llama3")
+    mistral_model: str = field(
+        default_factory=lambda: os.getenv("MISTRAL_MODEL", "mistral-large-latest")
     )
 
     # ── Embeddings ─────────────────────────────────────────────────
