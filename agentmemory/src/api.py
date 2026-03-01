@@ -17,9 +17,12 @@ GET  /stats                      → Endee index stats
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .agent import MemoryAgent
@@ -78,6 +81,17 @@ class SearchRequest(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
+# Serve static files (the chat UI)
+_STATIC = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=_STATIC), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    """Serve the chat UI at the root URL."""
+    return FileResponse(_STATIC / "index.html")
+
 
 @app.get("/health")
 def health():

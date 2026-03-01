@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentMemory — AI with Long-Term Memory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #111118;
+            --surface2: #1a1a26;
+            --border: #2a2a3d;
+            --accent: #7c5cfc;
+            --accent2: #a78bfa;
+            --accent-glow: rgba(124, 92, 252, 0.15);
+            --text: #e2e2f0;
+            --text-muted: #6b6b8a;
+            --user-bubble: #1e1a3d;
+            --agent-bubble: #0f1a2e;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 24px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            backdrop-filter: blur(12px);
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #4f46e5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .logo-text h1 {
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        .logo-text p {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+            margin-top: 1px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .session-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .session-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 6px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .memories-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(124, 92, 252, 0.3);
+            font-size: 12px;
+            color: var(--accent2);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .memories-btn:hover {
+            background: rgba(124, 92, 252, 0.25);
+            border-color: var(--accent);
+        }
+
+        /* Main Layout */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .messages::-webkit-scrollbar { width: 4px; }
+        .messages::-webkit-scrollbar-track { background: transparent; }
+        .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* Welcome screen */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 16px;
+            text-align: center;
+            padding: 40px;
+            opacity: 0.9;
+        }
+
+        .welcome-icon {
+            font-size: 52px;
+            filter: drop-shadow(0 0 20px rgba(124, 92, 252, 0.5));
+        }
+
+        .welcome h2 {
+            font-size: 22px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #fff, var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.7;
+            max-width: 460px;
+        }
+
+        .welcome-features {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        .feature-chip {
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Message Bubbles */
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 780px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .message.user .avatar {
+            background: linear-gradient(135deg, var(--accent), #4f46e5);
+        }
+
+        .message.agent .avatar {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        }
+
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 14px;
+            line-height: 1.65;
+            max-width: 600px;
+        }
+
+        .message.user .bubble {
+            background: var(--user-bubble);
+            border: 1px solid rgba(124, 92, 252, 0.2);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.agent .bubble {
+            background: var(--agent-bubble);
+            border: 1px solid rgba(14, 165, 233, 0.15);
+            border-bottom-left-radius: 4px;
+        }
+
+        .bubble-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .message.user .bubble-meta { text-align: right; }
+
+        /* Typing indicator */
+        .typing { display: flex; gap: 5px; align-items: center; padding: 8px 4px; }
+        .typing span {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--accent2);
+            animation: bounce 1.2s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+            40% { transform: translateY(-7px); opacity: 1; }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 16px 24px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 10px 10px 10px 16px;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: rgba(124, 92, 252, 0.5);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            resize: none;
+            max-height: 120px;
+            line-height: 1.5;
+        }
+
+        textarea::placeholder { color: var(--text-muted); }
+
+        .send-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), #4f46e5);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover { transform: scale(1.05); box-shadow: 0 0 12px var(--accent-glow); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .input-hint {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* Sidebar - Memories */
+        .sidebar {
+            width: 300px;
+            border-left: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width 0.3s ease;
+        }
+
+        .sidebar.collapsed { width: 0; overflow: hidden; }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .memory-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .memory-list::-webkit-scrollbar { width: 3px; }
+        .memory-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .memory-card {
+            padding: 10px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .memory-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: var(--accent-glow);
+            border: 1px solid rgba(124, 92, 252, 0.2);
+            font-size: 10px;
+            color: var(--accent2);
+        }
+
+        .no-memories {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 32px 16px;
+        }
+
+        /* Error toast */
+        .toast {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            padding: 10px 16px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 10px;
+            color: #fca5a5;
+            font-size: 13px;
+            animation: fadeIn 0.3s ease;
+            z-index: 100;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <div class="logo-icon">🧠</div>
+        <div class="logo-text">
+            <h1>AgentMemory</h1>
+            <p>Powered by Endee Vector DB · Mistral AI</p>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="session-badge">
+            <div class="session-dot"></div>
+            <span id="session-label">No session</span>
+        </div>
+        <button class="memories-btn" onclick="toggleSidebar()">
+            🗂 Memories <span id="memory-count">0</span>
+        </button>
+    </div>
+</header>
+
+<div class="main">
+    <div class="chat-area">
+        <div class="messages" id="messages">
+            <div class="welcome" id="welcome">
+                <div class="welcome-icon">🧠</div>
+                <h2>Your AI Agent with Long-Term Memory</h2>
+                <p>This agent remembers everything you tell it — across sessions. Tell it your name, preferences, and projects, then come back tomorrow and it'll still remember you.</p>
+                <div class="welcome-features">
+                    <span class="feature-chip">🔍 Semantic Memory Search</span>
+                    <span class="feature-chip">💾 Endee Vector DB</span>
+                    <span class="feature-chip">🤖 Mistral AI</span>
+                    <span class="feature-chip">⚡ Persistent Sessions</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea
+                    id="msg-input"
+                    placeholder="Type a message... (Shift+Enter for new line)"
+                    rows="1"
+                    oninput="autoResize(this)"
+                    onkeydown="handleKey(event)"
+                ></textarea>
+                <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+            </div>
+            <div class="input-hint">Press <strong>Enter</strong> to send · <strong>Shift+Enter</strong> for a new line</div>
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            🗂 Stored Memories
+        </div>
+        <div class="memory-list" id="memory-list">
+            <div class="no-memories">No memories yet.<br>Start chatting to build memory!</div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = '';
+    let sessionId = null;
+    let sidebarOpen = true;
+
+    // ── Session ───────────────────────────────────────────────────────────────
+    async function initSession() {
+        try {
+            const r = await fetch(`${API}/sessions`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({})
+            });
+            const data = await r.json();
+            sessionId = data.session_id;
+            document.getElementById('session-label').textContent = sessionId;
+        } catch(e) {
+            showToast('Failed to connect to the API. Please refresh.');
+        }
+    }
+
+    // ── Messaging ─────────────────────────────────────────────────────────────
+    async function sendMessage() {
+        const input = document.getElementById('msg-input');
+        const text = input.value.trim();
+        if (!text || !sessionId) return;
+
+        // Hide welcome, show message
+        const welcome = document.getElementById('welcome');
+        if (welcome) welcome.remove();
+
+        appendMessage('user', text);
+        input.value = '';
+        input.style.height = 'auto';
+
+        const typingId = appendTyping();
+        document.getElementById('send-btn').disabled = true;
+
+        try {
+            const r = await fetch(`${API}/sessions/${sessionId}/chat`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+            const data = await r.json();
+            removeTyping(typingId);
+            appendMessage('agent', data.answer, `Turn ${data.turn} · ${data.memories_used} memories recalled`);
+            refreshMemories();
+        } catch(e) {
+            removeTyping(typingId);
+            appendMessage('agent', '⚠️ Something went wrong. Please try again.');
+        }
+
+        document.getElementById('send-btn').disabled = false;
+    }
+
+    function appendMessage(role, text, meta = '') {
+        const msgs = document.getElementById('messages');
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        div.innerHTML = `
+            <div class="avatar">${role === 'user' ? '👤' : '🤖'}</div>
+            <div>
+                <div class="bubble">${escapeHtml(text)}</div>
+                ${meta ? `<div class="bubble-meta">${meta}</div>` : ''}
+            </div>
+        `;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        return div;
+    }
+
+    function appendTyping() {
+        const msgs = document.getElementById('messages');
+        const id = 'typing-' + Date.now();
+        const div = document.createElement('div');
+        div.className = 'message agent';
+        div.id = id;
+        div.innerHTML = `<div class="avatar">🤖</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        return id;
+    }
+
+    function removeTyping(id) {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    }
+
+    // ── Memories Sidebar ──────────────────────────────────────────────────────
+    async function refreshMemories() {
+        if (!sessionId) return;
+        try {
+            const r = await fetch(`${API}/sessions/${sessionId}/memories`);
+            const memories = await r.json();
+            document.getElementById('memory-count').textContent = memories.length;
+
+            const list = document.getElementById('memory-list');
+            if (memories.length === 0) {
+                list.innerHTML = '<div class="no-memories">No memories yet.<br>Start chatting to build memory!</div>';
+                return;
+            }
+            list.innerHTML = memories.map(m => `
+                <div class="memory-card">
+                    ${escapeHtml(m.summary)}
+                    <div class="tags">${m.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        } catch(e) {}
+    }
+
+    function toggleSidebar() {
+        sidebarOpen = !sidebarOpen;
+        document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+    }
+
+    // ── Utilities ─────────────────────────────────────────────────────────────
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 4000);
+    }
+
+    // Init
+    initSession();
+</script>
+</body>
+</html>
