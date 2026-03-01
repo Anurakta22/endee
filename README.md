@@ -1,3 +1,23 @@
+# 🧠 AgentMemory — AI Project Built on Endee
+
+> **📌 Internship Project Submission by Anurakta Dash**
+
+This repository is a fork of [endee-io/endee](https://github.com/endee-io/endee).
+My AI/ML project — **AgentMemory** — is built inside the [`agentmemory/`](./agentmemory) folder.
+
+| | |
+|---|---|
+| 📁 **Project folder** | [`agentmemory/`](./agentmemory) |
+| 📖 **Project README** | [`agentmemory/README.md`](./agentmemory/README.md) |
+| 🚀 **Live Demo** | [anurakta22-endeeagent-memory.hf.space](https://anurakta22-endeeagent-memory.hf.space) |
+
+### What I built
+**AgentMemory** is an AI agent with long-term episodic memory, powered by Endee as the vector database. The agent remembers past conversations using semantic vector search — telling it your name today means it remembers you tomorrow.
+
+**Use case:** Agentic AI workflow with persistent, semantic memory using Endee vector DB + Mistral AI.
+
+---
+
 # Endee: High-Performance Open Source Vector Database
 
 **Endee (nD)** is a specialized, high-performance vector database built for speed and efficiency. This guide covers supported platforms, dependency requirements, and detailed build instructions using both our automated installer and manual CMake configuration.
