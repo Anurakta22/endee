@@ -1,6 +1,13 @@
-# 🧠 AgentMemory
+---
+title: EndeeAgent Memory
+emoji: 🧠
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
 
-> **Long-term episodic memory for AI agents, powered by [Endee](https://github.com/endee-io/endee) vector database.**
+# 🧠 AgentMemory> **Long-term episodic memory for AI agents, powered by [Endee](https://github.com/endee-io/endee) vector database.**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Endee](https://img.shields.io/badge/vector--db-Endee-brightgreen)](https://github.com/endee-io/endee)
