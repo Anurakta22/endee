@@ -1,8 +1,10 @@
 # Use the Endee server as the base image so we don't need to copy any binary
 FROM endeeio/endee-server:latest
 
+# Switch to root so we can install system packages
+USER root
+
 # Install Python 3.10 and pip
-# The Endee image uses Debian, so we use apt-get
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
